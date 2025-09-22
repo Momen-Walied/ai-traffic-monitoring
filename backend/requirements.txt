@@ -1,0 +1,20 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+opencv-python
+ultralytics
+# For Database
+sqlalchemy
+psycopg2-binary
+alembic # For database migrations
+# For LLM
+google-genai
+
+pydantic-settings
+deep_sort_realtime
+pgvector
+shapely
+
+python-multipart
+onnxruntime-gpu
+scipy
