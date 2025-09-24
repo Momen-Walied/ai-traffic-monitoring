@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # 1. The PostgreSQL Database Service with pgvector
+  db:
+    image: ankane/pgvector:v0.5.1 # A pre-built image with the pgvector extension
+    container_name: traffic_db
+    environment:
+      - POSTGRES_USER=your_db_user       # Change this
+      - POSTGRES_PASSWORD=your_strong_password  # Change this
+      - POSTGRES_DB=traffic_db
+    volumes:
+      # This line is crucial! It saves your database data outside the container,
+      # so your data persists even if you restart or rebuild the container.
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # Maps your local port 5432 to the container's port 5432
+    restart: unless-stopped
+
+  # 2. The FastAPI Backend Service
+  backend:
+    container_name: traffic_backend
+    build:
+      context: ./backend  # Tells Docker to look for the Dockerfile in the ./backend directory
+    ports:
+      - "8000:8000" # Maps your local port 8000 to the container's port 8000
+    depends_on:
+      - db           # This ensures the 'db' service starts before the 'backend'
+    environment:
+      # This URL tells your backend how to find the database container.
+      # 'db' is the service name defined above.
+      - DATABASE_URL=postgresql://your_db_user:your_strong_password@db:5432/traffic_db
+      - GEMINI_API_KEY=your_gemini_api_key_here # Add your Gemini key here
+    restart: unless-stopped
+
+  # 3. The Next.js Frontend Service
+  frontend:
+    container_name: traffic_frontend
+    build:
+      context: ./frontend # Tells Docker to look for the Dockerfile in the ./frontend directory
+      args:
+        # This passes the backend URL to the frontend build process.
+        # It's localhost because your browser will access it via your local machine.
+        - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+    ports:
+      - "3000:3000" # Maps your local port 3000 to the container's port 3000
+    depends_on:
+      - backend      # Ensures the backend is running before the frontend starts
+    restart: unless-stopped
+
+# Defines the named volume used by the database service for data persistence
+volumes:
+  postgres_data:
